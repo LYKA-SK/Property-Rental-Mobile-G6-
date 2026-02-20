@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:property_app/screens/home/search_screen.dart';
+import 'package:property_app/screens/home/profile_screen.dart'; //
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -11,13 +12,12 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // IMPORTANT: The number of widgets here MUST be exactly 5
   final List<Widget> _pages = [
-    const Center(child: Text('Home Page')),      // Tab 0
-    const SearchScreen(),                         // Tab 1
-    const Center(child: Text('Saved Page')),     // Tab 2
-    const Center(child: Text('Bookings Page')),  // Tab 3
-    const Center(child: Text('Profile Page')),   // Tab 4
+    const Center(child: Text('Home Page')),
+    const SearchScreen(),
+    const Center(child: Text('Saved Page')),
+    const Center(child: Text('Bookings Page')),
+    const ProfileScreen(), // This links to your actual UI
   ];
 
   @override
