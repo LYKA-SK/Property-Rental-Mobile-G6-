@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:property_app/screens/home/home_screen.dart';
 import 'package:property_app/screens/profile/profile_screen.dart';
+// import 'package:property_app/screens/home/my_favorites_screen.dart'; // Make sure this path is correct
 
 class MainNavigation extends StatefulWidget {
   final int userRole;
-  final String userName; // New: receive the name
+  final String userName;
 
   const MainNavigation({
     super.key,
@@ -21,12 +22,16 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    // We create a list of 5 widgets to match the 5 icons below
     final List<Widget> _pages = [
-      const Center(child: Text('Home')),
-      const MyFavoritesScreen(),
-      const Center(child: Text('Bookings')),
-      // Pass both name and role to the ProfileScreen
-      ProfileScreen(userRole: widget.userRole, userName: widget.userName),
+      const Center(child: Text('Home Page')),      // Index 0: HOME
+      const Center(child: Text('Search Page')),    // Index 1: SEARCH
+      const MyFavoritesScreen(),                   // Index 2: SAVED (Your new code!)
+      const Center(child: Text('Bookings Page')),  // Index 3: BOOKINGS
+      ProfileScreen(                               // Index 4: PROFILE
+          userRole: widget.userRole,
+          userName: widget.userName
+      ),
     ];
 
     return Scaffold(
@@ -35,6 +40,7 @@ class _MainNavigationState extends State<MainNavigation> {
         currentIndex: _selectedIndex,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF07B741),
+        unselectedItemColor: Colors.grey,
         onTap: (index) => setState(() => _selectedIndex = index),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'HOME'),
