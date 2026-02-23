@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // Import your screens
 import 'package:property_app/screens/auth/login_screen.dart';
 import 'package:property_app/screens/auth/register_screen.dart';
-import 'package:property_app/screens/home/favorite_screen.dart';
+import 'package:property_app/screens/home/home_screen.dart';
 import 'package:property_app/widgets/navbar.dart'; // ← this should contain MainNavigation
 
 void main() {

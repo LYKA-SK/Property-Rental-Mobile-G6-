@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:property_app/screens/home/favorite_screen.dart';
-import 'package:property_app/screens/home/search_screen.dart';
-// 1. Import your new profile screen here
+import 'package:property_app/screens/home/home_screen.dart';
 import 'package:property_app/screens/profile/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final int userRole;
+  final String userName; // New: receive the name
+
+  const MainNavigation({
+    super.key,
+    this.userRole = 0,
+    this.userName = "Guest"
+  });
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -14,32 +19,23 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // 2. Update the list to include the actual ProfileScreen widget
-  final List<Widget> _pages = [
-    const Center(child: Text('Home Page')),      // Tab 0
-    const SearchScreen(),                         // Tab 1
-    const MyFavoritesScreen(),    // Tab 2
-    const Center(child: Text('Bookings Page')),  // Tab 3
-    const ProfileScreen(),                        // Tab 4 (Connected!)
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _pages = [
+      const Center(child: Text('Home')),
+      const MyFavoritesScreen(),
+      const Center(child: Text('Bookings')),
+      // Pass both name and role to the ProfileScreen
+      ProfileScreen(userRole: widget.userRole, userName: widget.userName),
+    ];
+
     return Scaffold(
-      body: IndexedStack( // Using IndexedStack preserves the state of your pages
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF2ECC71),
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF07B741),
+        onTap: (index) => setState(() => _selectedIndex = index),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'HOME'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'SEARCH'),

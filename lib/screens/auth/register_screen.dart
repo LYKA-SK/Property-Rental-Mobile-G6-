@@ -37,41 +37,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // Inside _RegisterScreenState
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (_selectedRole == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your role'), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
-    if (!_termsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Accept terms first'), backgroundColor: Colors.red),
-      );
-      return;
-    }
+    if (_selectedRole == null || !_termsAccepted) return;
 
     setState(() => _isLoading = true);
-
     await Future.delayed(const Duration(milliseconds: 1500));
-
     setState(() => _isLoading = false);
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Registered as $_selectedRole!'),
-        backgroundColor: const Color(0xFF07B741),
-      ),
-    );
+    // 1. Capture the data from your controllers
+    String name = _fullNameController.text;
+    int roleValue = (_selectedRole == 'Agent') ? 1 : 0;
 
+    // 2. Pass it to MainNavigation
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const MainNavigation()),
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(
+          userName: name,
+          userRole: roleValue,
+        ),
+      ),
     );
   }
 
