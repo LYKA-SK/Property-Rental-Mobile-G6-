@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:property_app/screens/home/favorite_screen.dart';
 import 'package:property_app/screens/home/search_screen.dart';
 // 1. Import your new profile screen here
-import 'package:property_app/screens/home/profile_screen.dart';
+import 'package:property_app/screens/profile/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
