@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Import your screens
 import 'package:property_app/screens/auth/login_screen.dart';
 import 'package:property_app/screens/auth/register_screen.dart';
+import 'package:property_app/screens/home/favorite_screen.dart';
 import 'package:property_app/widgets/navbar.dart'; // ← this should contain MainNavigation
 
 void main() {
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const MainNavigation(), // your bottom navigation
+        '/favorite': (context) => const MyFavoritesScreen()
       },
     );
   }

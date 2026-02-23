@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:property_app/screens/home/favorite_screen.dart';
 import 'package:property_app/screens/home/search_screen.dart';
 // 1. Import your new profile screen here
 import 'package:property_app/screens/home/profile_screen.dart';
@@ -17,7 +18,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _pages = [
     const Center(child: Text('Home Page')),      // Tab 0
     const SearchScreen(),                         // Tab 1
-    const Center(child: Text('Saved Page')),     // Tab 2
+    const MyFavoritesScreen(),    // Tab 2
     const Center(child: Text('Bookings Page')),  // Tab 3
     const ProfileScreen(),                        // Tab 4 (Connected!)
   ];
