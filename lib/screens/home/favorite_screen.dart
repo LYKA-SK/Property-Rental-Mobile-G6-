@@ -61,7 +61,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
           'My Favorites',
           style: TextStyle(
             fontFamily: 'PlusJakartaSans',
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w900,
             color: Color(0xFF07B741),
           ),
         ),
@@ -76,25 +76,6 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
             },
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search near RUPP, ITC...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-            ),
-          ),
-        ),
       ),
       body: Column(
         children: [
@@ -174,11 +155,11 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: Image.network(
                   item['image'],
-                  height: 400,                    // ← changed to 200
+                  height: 300,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
-                    height: 200,                  // ← matched to 200
+                    height: 200,
                     color: Colors.grey.shade200,
                     child: const Icon(
                       Icons.image_not_supported,

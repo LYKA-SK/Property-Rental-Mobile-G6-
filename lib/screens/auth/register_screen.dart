@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:property_app/widgets/navbar.dart'; // ← your MainNavigation
+import 'package:property_app/widgets/navbar.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,31 +13,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController(); // now optional
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   String? _selectedRole;
-  String _countryCode = '+855'; // default Cambodia
+  String _countryCode = '+855';
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _termsAccepted = false;
   bool _isLoading = false;
 
-  final List<String> _roles = [
-    'Student',
-    'Landlord/Owner',
-    'Agent / Real Estate',
-  ];
+  final List<String> _roles = ['User', 'Agent'];
 
-  final List<String> _countryCodes = ['+855', '+60', '+66', '+84', '+1', '+44'];
+  final List<String> _countryCodes = ['+855', '+60', '+66', '+84', '+1'];
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -55,18 +49,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You must accept the Terms & Privacy Policy'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Accept terms first'), backgroundColor: Colors.red),
       );
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // Simulate API call (replace with real auth: phone OTP or email/password)
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     setState(() => _isLoading = false);
 
@@ -74,12 +64,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Welcome, $_selectedRole! Account created.'),
+        content: Text('Registered as $_selectedRole!'),
         backgroundColor: const Color(0xFF07B741),
       ),
     );
 
-    // Navigate to main app
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const MainNavigation()),
@@ -102,7 +91,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black87,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -115,14 +103,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
 
                 Text(
-                  'Join the student community in Phnom Penh and find your perfect stay.',
+                  'Join the student community in Phnom Penh',
                   style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                   textAlign: TextAlign.center,
                 ),
 
                 const SizedBox(height: 40),
 
-                // Full Name
                 TextFormField(
                   controller: _fullNameController,
                   textCapitalization: TextCapitalization.words,
@@ -133,15 +120,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Please enter your full name';
-                    if (value.trim().length < 3) return 'Name is too short';
+                    if (value == null || value.trim().isEmpty) return 'Required';
+                    if (value.trim().length < 3) return 'Too short';
                     return null;
                   },
                 ),
 
                 const SizedBox(height: 20),
 
-                // Phone Number (main registration method)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -176,13 +162,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Phone number is required';
-                          }
-                          final cleanPhone = value.trim().replaceAll(RegExp(r'[^0-9]'), '');
-                          if (cleanPhone.length < 8 || cleanPhone.length > 10) {
-                            return 'Enter a valid phone number';
-                          }
+                          if (value == null || value.trim().isEmpty) return 'Required';
+                          final clean = value.trim().replaceAll(RegExp(r'[^0-9]'), '');
+                          if (clean.length < 8 || clean.length > 10) return 'Invalid';
                           return null;
                         },
                       ),
@@ -192,7 +174,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
-                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -206,15 +187,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Password is required';
-                    if (value.length < 6) return 'Minimum 6 characters';
+                    if (value == null || value.isEmpty) return 'Required';
+                    if (value.length < 6) return 'Min 6 characters';
                     return null;
                   },
                 ),
 
                 const SizedBox(height: 20),
 
-                // Confirm Password
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -228,15 +208,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please confirm password';
+                    if (value == null || value.isEmpty) return 'Required';
                     if (value != _passwordController.text) return 'Passwords do not match';
                     return null;
                   },
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
-                // Role selection
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
                   hint: const Text('Select your role'),
@@ -252,12 +231,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     );
                   }).toList(),
                   onChanged: (value) => setState(() => _selectedRole = value),
-                  validator: (value) => value == null ? 'Please select your role' : null,
+                  validator: (value) => value == null ? 'Required' : null,
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
-                // Terms & Privacy
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -298,9 +276,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
 
-                // Register button
                 SizedBox(
                   height: 54,
                   child: ElevatedButton(
@@ -310,7 +287,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
-                      disabledBackgroundColor: const Color(0xFF07B741).withOpacity(0.4),
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -319,7 +295,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                     )
                         : const Text(
-                      'Create Account',
+                      'Register',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
