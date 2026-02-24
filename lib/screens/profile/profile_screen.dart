@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:property_app/widgets/navbar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'profile_user.dart';
 import 'profile_agent.dart';
@@ -144,8 +145,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           side: const BorderSide(color: Colors.redAccent),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text("Logout", style: TextStyle(color: Colors.redAccent)),
+        onPressed: () {
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MainNavigation(
+                userName: "Guest",
+                userRole: 0,
+              ),
+            ),
+                (route) => false,
+          );
+        },
+        child: const Text(
+          "Logout",
+          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
