@@ -11,6 +11,7 @@ class MyFavoritesScreen extends StatefulWidget {
 
 class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
   final List<Map<String, dynamic>> _favorites = [
+    // Original items
     {
       'image':
       'https://a0.muscache.com/im/pictures/hosting/Hosting-1298149296746584747/original/0ba47f87-27ff-473e-bcc2-1942c525dc0e.jpeg',
@@ -40,6 +41,58 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
       'baths': 2,
       'isFavorite': true,
     },
+
+    // Additional realistic favorites (2025–2026 Cambodia rentals)
+    {
+      'image':
+      'https://images.realestate.com.kh/listings/2026-02/img_2278-2.jpeg',
+      'title': 'Modern 1-Bedroom Condo',
+      'location': 'Toul Tom Poung, Phnom Penh',
+      'price': '\$650/month',
+      'beds': 1,
+      'baths': 1,
+      'isFavorite': true,
+    },
+    {
+      'image':
+      'https://camrealtyservice.com/wp-content/uploads/2026/02/modern-style-2-bedrooms-serviced-apartment-for-rent-near-vattanak-tower-3.jpg',
+      'title': 'Serviced 2-Bedroom Apartment',
+      'location': 'BKK1, Phnom Penh',
+      'price': '\$1,200/month',
+      'beds': 2,
+      'baths': 2,
+      'isFavorite': true,
+    },
+    {
+      'image':
+      'https://camrealtyservice.com/wp-content/uploads/2020/04/2-bedrooms-condo-for-rent-along-street-2004-N734168-Phnom-Penh-1.jpg',
+      'title': 'Cozy 2-Bedroom near Airport',
+      'location': 'Prampi Makara, Phnom Penh',
+      'price': '\$900/month',
+      'beds': 2,
+      'baths': 2,
+      'isFavorite': true,
+    },
+    {
+      'image':
+      'http://homeconnectcambodia.com/wp-content/uploads/2017/11/IMG_9036.jpg',
+      'title': 'Spacious 4-Bedroom Villa + Garden',
+      'location': 'Prek Eng, Phnom Penh',
+      'price': '\$2,800/month',
+      'beds': 4,
+      'baths': 3,
+      'isFavorite': true,
+    },
+    {
+      'image':
+      'https://photos.ips-cambodia.com/photos/property/18779/24062509088db160-18779-Studio-Apartment-For-Rent-Svay-Dangkum-Siem-Reap5-850x567.tab.jpg',
+      'title': 'Studio Apartment near Pub Street',
+      'location': 'Svay Dangkum, Siem Reap',
+      'price': '\$450/month',
+      'beds': 1,
+      'baths': 1,
+      'isFavorite': true,
+    },
   ];
 
   final List<String> _filters = [
@@ -53,6 +106,23 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Simple keyword-based filtering
+    final filteredFavorites = _selectedFilter == 'All'
+        ? _favorites
+        : _favorites.where((item) {
+      final titleLower = item['title'].toString().toLowerCase();
+      if (_selectedFilter == 'Condo') {
+        return titleLower.contains('condo') || titleLower.contains('serviced');
+      } else if (_selectedFilter == 'House / Villa') {
+        return titleLower.contains('house') || titleLower.contains('villa');
+      } else if (_selectedFilter == 'Room') {
+        return titleLower.contains('room') ||
+            titleLower.contains('studio') ||
+            titleLower.contains('apartment') && !titleLower.contains('serviced');
+      }
+      return true;
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -70,7 +140,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
           IconButton(
             icon: const Icon(Icons.filter_list_rounded, color: Color(0xFF07B741)),
             onPressed: () {
-              // TODO: advanced filter bottom sheet
+              // TODO: open advanced filter bottom sheet
             },
           ),
         ],
@@ -132,7 +202,6 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                     if (selected) {
                       setState(() {
                         _selectedFilter = filter;
-                        // Future: filter the list here
                       });
                     }
                   },
@@ -141,13 +210,13 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
             ),
           ),
 
-          // List of saved items
+          // Favorites list
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _favorites.length,
+              itemCount: filteredFavorites.length,
               itemBuilder: (context, index) {
-                final item = _favorites[index];
+                final item = filteredFavorites[index];
                 return _buildFavoriteCard(item);
               },
             ),
@@ -175,15 +244,35 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                   height: 300,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 300,                  // ← matched to 200
-                    color: Colors.grey.shade200,
-                    child: const Icon(
-                      Icons.image_not_supported,
-                      size: 80,
-                      color: Colors.grey,
-                    ),
-                  ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 300,
+                      width: double.infinity,
+                      color: Colors.grey.shade50,
+                      alignment: Alignment.center,
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                            : null,
+                        color: const Color(0xFF07B741),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 300,
+                      width: double.infinity,
+                      color: Colors.grey.shade200,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.broken_image_rounded,
+                        size: 80,
+                        color: Colors.grey,
+                      ),
+                    );
+                  },
                 ),
               ),
               Positioned(
@@ -201,6 +290,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                     onPressed: () {
                       setState(() {
                         item['isFavorite'] = !item['isFavorite'];
+                        // Optional: if !isFavorite → remove from list or mark for later sync
                       });
                     },
                   ),
@@ -265,7 +355,8 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                   height: 48,
                   child: OutlinedButton(
                     onPressed: () {
-                      // TODO: navigate to detail page
+                      // TODO: navigate to property detail page
+                      // Navigator.push(context, MaterialPageRoute(builder: (_) => DetailScreen(item: item)));
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFF07B741), width: 2),
