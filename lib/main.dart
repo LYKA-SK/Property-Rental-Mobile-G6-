@@ -28,12 +28,12 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey.shade50,
       ),
       // Start with login screen
-      initialRoute: '/login',
+      // main.dart
+      initialRoute: '/home', // Change this to show Home first
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const MainNavigation(), // your bottom navigation
-        '/favorite': (context) => const MyFavoritesScreen()
+        '/home': (context) => const MainNavigation(),
       },
     );
   }

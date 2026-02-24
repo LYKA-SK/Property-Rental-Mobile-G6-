@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:property_app/screens/home/home_screen.dart';
-import 'package:property_app/screens/profile/profile_screen.dart';
-// import 'package:property_app/screens/home/my_favorites_screen.dart'; // Make sure this path is correct
+import '../screens/home/home_screen.dart';
+import '../screens/activity/favorite_screen.dart';
+import '../screens/profile/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   final int userRole;
@@ -20,15 +20,25 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
+  // This function handles the "Only Home" logic
+  void _onItemTapped(int index) {
+    if (widget.userName == "Guest" && index != 0) {
+      Navigator.pushNamed(context, '/login');
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // We create a list of 5 widgets to match the 5 icons below
     final List<Widget> _pages = [
-      const Center(child: Text('Home Page')),      // Index 0: HOME
-      const Center(child: Text('Search Page')),    // Index 1: SEARCH
-      const MyFavoritesScreen(),                   // Index 2: SAVED (Your new code!)
-      const Center(child: Text('Bookings Page')),  // Index 3: BOOKINGS
-      ProfileScreen(                               // Index 4: PROFILE
+      const HomeScreen(),
+      const Center(child: Text('Search Page')),
+      const MyFavoritesScreen(),
+      const Center(child: Text('Bookings Page')),
+      ProfileScreen(
           userRole: widget.userRole,
           userName: widget.userName
       ),
@@ -41,7 +51,7 @@ class _MainNavigationState extends State<MainNavigation> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF07B741),
         unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: _onItemTapped, // Calls our custom logic
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'HOME'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'SEARCH'),

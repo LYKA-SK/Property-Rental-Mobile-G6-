@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:property_app/screens/auth/register_screen.dart';  // uncomment if needed
-// import 'package:property_app/widgets/navbar.dart'; // or main_navigation.dart
+import '../../widgets/navbar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,10 +23,19 @@ class _LoginScreenState extends State<LoginScreen> {
     await Future.delayed(const Duration(seconds: 1)); // simulate API call
 
     setState(() => _isLoading = false);
-
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(context, '/home');
+    // PASS DATA TO MAIN NAVIGATION
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(
+          userName: _emailController.text.split('@')[0], // Uses name from email
+          userRole: 0, // 0 for User, 1 for Agent (you can get this from your DB)
+        ),
+      ),
+          (route) => false,
+    );
   }
 
   @override
