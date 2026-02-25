@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:property_app/widgets/navbar.dart';
+import 'package:intl/intl.dart';
+
+// Make sure to import your MainNavigation file
+// Adjust the path according to your project structure
+import 'package:property_app/widgets/navbar.dart'; // ← if MainNavigation is here
+// OR: import 'package:property_app/screens/main_navigation.dart';  // example
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,10 +17,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _fullNameController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  DateTime? _selectedDate;
   String? _selectedRole;
   String _countryCode = '+855';
 
@@ -25,40 +33,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   final List<String> _roles = ['User', 'Agent'];
-
   final List<String> _countryCodes = ['+855', '+60', '+66', '+84', '+1'];
 
   @override
   void dispose() {
     _fullNameController.dispose();
+    _usernameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // Inside _RegisterScreenState
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime(2005),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  String? _formatDate(DateTime? date) {
+    if (date == null) return null;
+    return DateFormat('dd MMM yyyy').format(date);
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedRole == null || !_termsAccepted) return;
+    if (_selectedRole == null || !_termsAccepted || _selectedDate == null) return;
 
     setState(() => _isLoading = true);
+
+    // Simulate registration delay
     await Future.delayed(const Duration(milliseconds: 1500));
+
     setState(() => _isLoading = false);
 
     if (!mounted) return;
 
-    // 1. Capture the data from your controllers
-    String name = _fullNameController.text;
-    int roleValue = (_selectedRole == 'Agent') ? 1 : 0;
+    final name = _fullNameController.text.trim();
+    final roleValue = (_selectedRole == 'Agent') ? 1 : 0;
 
-    // 2. Pass it to MainNavigation
+    // If you later want to pass more fields, collect them here:
+    // final username = _usernameController.text.trim();
+    // final email = _emailController.text.trim();
+    // final phone = '$_countryCode ${_phoneController.text.trim()}';
+    // final dob = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => MainNavigation(
           userName: name,
           userRole: roleValue,
+          // username: username,   // uncomment when MainNavigation accepts it
+          // email: email,
+          // phone: phone,
         ),
       ),
     );
@@ -99,6 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 40),
 
+                // Full Name
                 TextFormField(
                   controller: _fullNameController,
                   textCapitalization: TextCapitalization.words,
@@ -117,6 +155,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
+                // Username
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    hintText: 'rith_sophea99',
+                    prefixIcon: const Icon(Icons.alternate_email_rounded),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Required';
+                    if (value.trim().length < 4) return 'Min 4 characters';
+                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+                      return 'Letters, numbers, underscore only';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Date of Birth (fixed version)
+                TextFormField(
+                  readOnly: true,
+                  initialValue: _formatDate(_selectedDate),
+                  decoration: InputDecoration(
+                    labelText: 'Date of Birth',
+                    hintText: 'Select your birth date',
+                    prefixIcon: const Icon(Icons.calendar_today_rounded),
+                    suffixIcon: const Icon(Icons.arrow_drop_down),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onTap: () => _selectDate(context),
+                  validator: (_) => _selectedDate == null ? 'Required' : null,
+                ),
+
+                const SizedBox(height: 20),
+
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'example@gmail.com',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Required';
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Phone Number
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -129,10 +227,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         items: _countryCodes.map((code) {
-                          return DropdownMenuItem<String>(
-                            value: code,
-                            child: Text(code),
-                          );
+                          return DropdownMenuItem(value: code, child: Text(code));
                         }).toList(),
                         onChanged: (value) {
                           if (value != null) setState(() => _countryCode = value);
@@ -163,6 +258,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
+                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -184,6 +280,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 20),
 
+                // Confirm Password
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -205,6 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 32),
 
+                // Role Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
                   hint: const Text('Select your role'),
@@ -214,10 +312,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   items: _roles.map((role) {
-                    return DropdownMenuItem<String>(
-                      value: role,
-                      child: Text(role),
-                    );
+                    return DropdownMenuItem(value: role, child: Text(role));
                   }).toList(),
                   onChanged: (value) => setState(() => _selectedRole = value),
                   validator: (value) => value == null ? 'Required' : null,
@@ -225,6 +320,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 32),
 
+                // Terms & Conditions
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -267,6 +363,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 40),
 
+                // Register Button
                 SizedBox(
                   height: 54,
                   child: ElevatedButton(
@@ -281,7 +378,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? const SizedBox(
                       height: 24,
                       width: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
                     )
                         : const Text(
                       'Register',
@@ -292,6 +392,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 32),
 
+                // Already have account?
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
