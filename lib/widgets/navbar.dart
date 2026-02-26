@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/activity/favorite_screen.dart';
-import '../screens/profile/profile_screen.dart';
 import '../screens/activity/review_screen.dart';
 import '../screens/activity/booking_screen.dart';
+import 'package:property_app/screens/profile/profile_screen.dart' as profile_page;
 class MainNavigation extends StatefulWidget {
   final int userRole;
   final String userName;
@@ -31,19 +31,20 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       const HomeScreen(),                          // Index 0
       const ReviewScreen(),                        // Index 1: Swapped Search for Reviews
       const MyFavoritesScreen(),                   // Index 2
       const BookingScreen(),                       // Index 3: Connected to BookingScreen
-      ProfileScreen(                               // Index 4
-          userRole: widget.userRole,
-          userName: widget.userName
+
+      profile_page.ProfileScreen( // Use the nickname here
+        userRole: widget.userRole,
+        userName: widget.userName,
       ),
     ];
 
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: IndexedStack(index: _selectedIndex, children: pages),
       // FIXED: Removed duplicate floatingActionButton code
       floatingActionButton: widget.userRole == 1
           ? FloatingActionButton(
