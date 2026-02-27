@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 25),
               _animateIn(child: _buildSectionHeader("Recent Listings"), delay: 500),
               const SizedBox(height: 15),
-              _buildRecentListings(), // This section was causing the stripes
+              _buildRecentListings(),
               const SizedBox(height: 30),
             ],
           ),
@@ -52,6 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// FIX: Clamp opacity to [0.0, 1.0] to prevent assertion error from
+  /// Curves.easeOutBack overshooting the tween range.
   Widget _animateIn({required Widget child, required int delay}) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -59,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
       curve: Curves.easeOutBack,
       builder: (context, value, child) {
         return Opacity(
-          opacity: value,
+          opacity: value.clamp(0.0, 1.0), // ✅ THE FIX
           child: Transform.translate(
             offset: Offset(0, 30 * (1 - value)),
             child: child,
@@ -77,13 +79,16 @@ class _HomeScreenState extends State<HomeScreen> {
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Current Location", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text("Current Location",
+                style: TextStyle(color: Colors.grey, fontSize: 13)),
             SizedBox(height: 4),
             Row(
               children: [
                 Icon(Icons.location_on, color: Color(0xFF1ADE7C), size: 20),
                 SizedBox(width: 4),
-                Text("Phnom Penh, KH", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                Text("Phnom Penh, KH",
+                    style:
+                    TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
                 Icon(Icons.keyboard_arrow_down, color: Colors.grey),
               ],
             ),
@@ -92,7 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
         CircleAvatar(
           radius: 24,
           backgroundColor: Colors.white,
-          child: ClipOval(child: Image.network('https://i.pravatar.cc/150?u=9')),
+          child: ClipOval(
+              child: Image.network('https://i.pravatar.cc/150?u=9')),
         ),
       ],
     );
@@ -114,10 +120,17 @@ class _HomeScreenState extends State<HomeScreen> {
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF1ADE7C) : Colors.white,
+                color:
+                isSelected ? const Color(0xFF1ADE7C) : Colors.white,
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: isSelected
-                    ? [BoxShadow(color: const Color(0xFF1ADE7C).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))]
+                    ? [
+                  BoxShadow(
+                      color: const Color(0xFF1ADE7C)
+                          .withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5))
+                ]
                     : [],
               ),
               child: Center(
@@ -125,8 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   categories[index],
                   style: TextStyle(
                       color: isSelected ? Colors.white : Colors.grey[600],
-                      fontWeight: FontWeight.bold
-                  ),
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -141,7 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Expanded(
           child: Focus(
-            onFocusChange: (hasFocus) => setState(() => _isSearchFocused = hasFocus),
+            onFocusChange: (hasFocus) =>
+                setState(() => _isSearchFocused = hasFocus),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -150,7 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(
-                  color: _isSearchFocused ? const Color(0xFF1ADE7C) : Colors.transparent,
+                  color: _isSearchFocused
+                      ? const Color(0xFF1ADE7C)
+                      : Colors.transparent,
                   width: 1.5,
                 ),
                 boxShadow: [
@@ -181,15 +196,22 @@ class _HomeScreenState extends State<HomeScreen> {
           onTapUp: (_) => setState(() => _filterScale = 1.0),
           onTapCancel: () => setState(() => _filterScale = 1.0),
           child: AnimatedTransform(
-            transform: Matrix4.diagonal3Values(_filterScale, _filterScale, 1.0),
+            transform:
+            Matrix4.diagonal3Values(_filterScale, _filterScale, 1.0),
             duration: const Duration(milliseconds: 100),
             alignment: Alignment.center,
             child: Container(
-              height: 55, width: 55,
+              height: 55,
+              width: 55,
               decoration: BoxDecoration(
                 color: const Color(0xFF1ADE7C),
                 borderRadius: BorderRadius.circular(15),
-                boxShadow: [BoxShadow(color: const Color(0xFF1ADE7C).withValues(alpha: 0.3), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                      color:
+                      const Color(0xFF1ADE7C).withValues(alpha: 0.3),
+                      blurRadius: 10)
+                ],
               ),
               child: const Icon(Icons.tune, color: Colors.white),
             ),
@@ -203,8 +225,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-        const Text("See All", style: TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
+        Text(title,
+            style: const TextStyle(
+                fontSize: 19, fontWeight: FontWeight.w800)),
+        const Text("See All",
+            style: TextStyle(
+                color: Color(0xFF1ADE7C),
+                fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -223,22 +250,39 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15)],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 15)
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
                   child: Stack(
                     children: [
-                      Image.network('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500', height: 140, width: 240, fit: BoxFit.cover),
+                      Image.network(
+                          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500',
+                          height: 140,
+                          width: 240,
+                          fit: BoxFit.cover),
                       Positioned(
-                        top: 12, left: 12,
+                        top: 12,
+                        left: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(12)),
-                          child: const Text("\$250/mo", style: TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                              color:
+                              Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12)),
+                          child: const Text("\$250/mo",
+                              style: TextStyle(
+                                  color: Color(0xFF1ADE7C),
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -249,12 +293,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Skyline Student Loft", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text("Skyline Student Loft",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
                       SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 14, color: Colors.grey),
-                          Text(" Near RUPP, Toul Kork", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          Icon(Icons.location_on,
+                              size: 14, color: Colors.grey),
+                          Text(" Near RUPP, Toul Kork",
+                              style: TextStyle(
+                                  color: Colors.grey, fontSize: 13)),
                         ],
                       ),
                     ],
@@ -270,8 +319,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRecentListings() {
     final List<Map<String, String>> data = [
-      {"title": "Cozy Studio near ITC", "price": "\$150", "img": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400"},
-      {"title": "Student Shared Room", "price": "\$120", "img": "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=400"},
+      {
+        "title": "Cozy Studio near ITC",
+        "price": "\$150",
+        "img":
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400"
+      },
+      {
+        "title": "Student Shared Room",
+        "price": "\$120",
+        "img":
+        "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=400"
+      },
     ];
 
     return ListView.builder(
@@ -285,16 +344,20 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10)
+            ],
           ),
           child: Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.network(data[index]['img']!, width: 90, height: 90, fit: BoxFit.cover),
+                child: Image.network(data[index]['img']!,
+                    width: 90, height: 90, fit: BoxFit.cover),
               ),
               const SizedBox(width: 15),
-              // THE FIX: Expanded tells the Column to only take available width
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,20 +366,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: const Color(0xFF1ADE7C).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)),
-                          child: const Text("VERIFIED", style: TextStyle(color: Color(0xFF1ADE7C), fontSize: 9, fontWeight: FontWeight.bold)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFF1ADE7C)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(5)),
+                          child: const Text("VERIFIED",
+                              style: TextStyle(
+                                  color: Color(0xFF1ADE7C),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold)),
                         ),
-                        Text(data[index]['price']!, style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(data[index]['price']!,
+                            style: const TextStyle(
+                                color: Color(0xFF1ADE7C),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       data[index]['title']!,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                      overflow: TextOverflow.ellipsis, // Prevents text from pushing past screen edge
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 15),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Text("Tuek La'ak, Phnom Penh", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const Text("Tuek La'ak, Phnom Penh",
+                        style:
+                        TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
