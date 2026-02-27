@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../activity/booking_screen.dart';
+import '../activity/favorite_screen.dart';
+import '../activity/review_screen.dart';
 
 class ProfileAgentView extends StatelessWidget {
   const ProfileAgentView({super.key});
@@ -19,11 +22,11 @@ class ProfileAgentView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildMenuBox([
-            _menuTile(Icons.calendar_today_outlined, "My Bookings"),
-            _menuTile(Icons.favorite_outline, "Saved Properties"),
-            _menuTile(Icons.chat_bubble_outline, "My Reviews"),
+            _menuTile(context, Icons.calendar_today_outlined, "My Bookings", const BookingScreen()),
+            _menuTile(context, Icons.favorite_outline, "Saved Properties", const MyFavoritesScreen()),
+            _menuTile(context, Icons.chat_bubble_outline, "My Reviews", const ReviewScreen()),
             const Divider(),
-            _menuTile(Icons.add_box_outlined, "Post Property", isGreen: true),
+            _menuTile(context, Icons.add_box_outlined, "Post Property", const PostPropertyScreen(), isGreen: true),
           ]),
         ],
       ),
@@ -49,11 +52,27 @@ class ProfileAgentView extends StatelessWidget {
     );
   }
 
-  Widget _menuTile(IconData icon, String title, {bool isGreen = false}) {
+  Widget _menuTile(BuildContext context, IconData icon, String title, Widget destination, {bool isGreen = false}) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF2ECC71)),
       title: Text(title, style: TextStyle(fontWeight: isGreen ? FontWeight.bold : FontWeight.normal)),
       trailing: const Icon(Icons.chevron_right, size: 18),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => destination));
+      },
+    );
+  }
+}
+
+// Fixed: This is now a real Widget, not just an empty class
+class PostPropertyScreen extends StatelessWidget {
+  const PostPropertyScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Post Property"), foregroundColor: Colors.black, backgroundColor: Colors.white, elevation: 0),
+      body: const Center(child: Text("Agent Post Form Details Here")),
     );
   }
 }
