@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:property_app/screens/auth/register_screen.dart';  // uncomment if needed
-// import 'package:property_app/widgets/navbar.dart'; // or main_navigation.dart
+import '../../widgets/navbar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,10 +23,19 @@ class _LoginScreenState extends State<LoginScreen> {
     await Future.delayed(const Duration(seconds: 1)); // simulate API call
 
     setState(() => _isLoading = false);
-
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(context, '/home');
+    // PASS DATA TO MAIN NAVIGATION
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(
+          userName: _emailController.text.split('@')[0], // Uses name from email
+          userRole: 0, // 0 for User, 1 for Agent (you can get this from your DB)
+        ),
+      ),
+          (route) => false,
+    );
   }
 
   @override
@@ -44,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const SizedBox(height: 40),
 
-                  // ── Changed to HOME icon (was apartment before) ───────────────
                   Container(
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
@@ -52,26 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Icon(
-                      Icons.home_rounded,          // ← Changed to home icon
-                      size: 90,                     // bigger for better visibility
+                      Icons.home_rounded,
+                      size: 90,
                       color: Color(0xFF2ECC71),
                     ),
                   ),
-
-                  // Alternative: if you want a custom house image/logo instead:
-                  // Container(
-                  //   height: 140,
-                  //   width: 140,
-                  //   padding: const EdgeInsets.all(20),
-                  //   decoration: BoxDecoration(
-                  //     color: const Color(0xFF2ECC71).withOpacity(0.10),
-                  //     borderRadius: BorderRadius.circular(30),
-                  //   ),
-                  //   child: Image.asset(
-                  //     'assets/icons/home_logo_green.png',  // add your green house icon here
-                  //     fit: BoxFit.contain,
-                  //   ),
-                  // ),
 
                   const SizedBox(height: 32),
 
@@ -141,11 +133,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 8),
 
+                  // ── Updated: Forgot password now goes to Register ───────────────
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        // TODO: Forgot password
+                        Navigator.pushNamed(context, '/register');
                       },
                       child: const Text(
                         "Forgot password?",
