@@ -1,6 +1,7 @@
 // lib/screens/home/my_favorites_screen.dart
 
 import 'package:flutter/material.dart';
+import '../details/detail_screen.dart';
 
 class MyFavoritesScreen extends StatefulWidget {
   const MyFavoritesScreen({super.key});
@@ -354,10 +355,15 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton(
-                    onPressed: () {
-                      // TODO: navigate to property detail page
-                      // Navigator.push(context, MaterialPageRoute(builder: (_) => DetailScreen(item: item)));
-                    },
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DetailScreen(item: item),
+                          ),
+                        );
+                      },
+
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFF07B741), width: 2),
                       shape: RoundedRectangleBorder(
