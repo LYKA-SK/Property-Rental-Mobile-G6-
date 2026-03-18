@@ -1,11 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MaterialApp(
-    home: HomeScreen(),
-    debugShowCheckedModeBanner: false,
-  ));
-}
+import 'package:shared_preferences/shared_preferences.dart';
+import '../details/detail_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,8 +13,27 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategory = 0;
-  bool _isSearchFocused = false;
-  double _filterScale = 1.0;
+  String _userName = "User";
+  int _userRole = 0;
+  String? _remoteUrl;
+
+  final List<String> _categories = ["Location", "Room For Rent", "Others"];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? "User";
+      _userRole = prefs.getInt('user_role') ?? 0;
+      // Fetch the remote URL saved during profile upload
+      _remoteUrl = prefs.getString('profile_image_url');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,23 +41,22 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              _animateIn(child: _buildHeader(), delay: 0),
+              _buildHeader(),
               const SizedBox(height: 25),
-              _animateIn(child: _buildCategoryTabs(), delay: 100),
+              _buildCategoryTabs(),
               const SizedBox(height: 20),
-              _animateIn(child: _buildSearchBar(), delay: 200),
+              _buildSearchBar(),
               const SizedBox(height: 25),
-              _animateIn(child: _buildSectionHeader("Featured Rooms"), delay: 300),
+              _buildSectionHeader("Featured Rooms"),
               const SizedBox(height: 15),
-              _animateIn(child: _buildFeaturedList(), delay: 400),
+              _buildFeaturedList(),
               const SizedBox(height: 25),
-              _animateIn(child: _buildSectionHeader("Recent Listings"), delay: 500),
+              _buildSectionHeader("Recent Listings"),
               const SizedBox(height: 15),
               _buildRecentListings(),
               const SizedBox(height: 30),
@@ -52,94 +67,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// FIX: Clamp opacity to [0.0, 1.0] to prevent assertion error from
-  /// Curves.easeOutBack overshooting the tween range.
-  Widget _animateIn({required Widget child, required int delay}) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeOutBack,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value.clamp(0.0, 1.0), // ✅ THE FIX
-          child: Transform.translate(
-            offset: Offset(0, 30 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
-
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Current Location",
-                style: TextStyle(color: Colors.grey, fontSize: 13)),
-            SizedBox(height: 4),
+            const Text("Current Location", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            const SizedBox(height: 4),
             Row(
-              children: [
+              children: const [
                 Icon(Icons.location_on, color: Color(0xFF1ADE7C), size: 20),
                 SizedBox(width: 4),
-                Text("Phnom Penh, KH",
-                    style:
-                    TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                Text("Phnom Penh, KH", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
               ],
             ),
           ],
         ),
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.white,
-          child: ClipOval(
-              child: Image.network('https://i.pravatar.cc/150?u=9')),
+        GestureDetector(
+          onTap: () async {
+            // FIXED: Passing actual variables instead of null/empty strings
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfileScreen(
+                  userRole: _userRole,
+                  userName: _userName,
+                ),
+              ),
+            );
+            _loadUserData(); // Refresh the image when returning from Profile
+          },
+          child: CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.grey[200],
+            // FIXED: Using NetworkImage for remote URLs
+            backgroundImage: (_remoteUrl != null && _remoteUrl!.isNotEmpty)
+                ? NetworkImage(_remoteUrl!)
+                : null,
+            child: (_remoteUrl == null || _remoteUrl!.isEmpty)
+                ? const Icon(Icons.person, color: Colors.grey)
+                : null,
+          ),
         ),
       ],
     );
   }
 
+  // ... (Keep the rest of your UI building methods as they were)
+
   Widget _buildCategoryTabs() {
-    List<String> categories = ["Location", "Room For Rent", "Others"];
     return SizedBox(
       height: 45,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
+        itemCount: _categories.length,
         itemBuilder: (context, index) {
           bool isSelected = _selectedCategory == index;
           return GestureDetector(
             onTap: () => setState(() => _selectedCategory = index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
+            child: Container(
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 25),
               decoration: BoxDecoration(
-                color:
-                isSelected ? const Color(0xFF1ADE7C) : Colors.white,
+                color: isSelected ? const Color(0xFF1ADE7C) : Colors.white,
                 borderRadius: BorderRadius.circular(25),
-                boxShadow: isSelected
-                    ? [
-                  BoxShadow(
-                      color: const Color(0xFF1ADE7C)
-                          .withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5))
-                ]
-                    : [],
+                boxShadow: [if(!isSelected) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
               ),
               child: Center(
-                child: Text(
-                  categories[index],
-                  style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey[600],
-                      fontWeight: FontWeight.bold),
-                ),
+                child: Text(_categories[index],
+                    style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontWeight: FontWeight.w600)),
               ),
             ),
           );
@@ -152,70 +150,28 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       children: [
         Expanded(
-          child: Focus(
-            onFocusChange: (hasFocus) =>
-                setState(() => _isSearchFocused = hasFocus),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              height: 55,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: _isSearchFocused
-                      ? const Color(0xFF1ADE7C)
-                      : Colors.transparent,
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: _isSearchFocused
-                        ? const Color(0xFF1ADE7C).withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  )
-                ],
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: "Search near RUPP, ITC...",
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            height: 55,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)],
+            ),
+            child: const TextField(
+              decoration: InputDecoration(
+                  hintText: "Search property...",
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 15),
-                ),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey)
               ),
             ),
           ),
         ),
         const SizedBox(width: 12),
-        GestureDetector(
-          onTapDown: (_) => setState(() => _filterScale = 0.9),
-          onTapUp: (_) => setState(() => _filterScale = 1.0),
-          onTapCancel: () => setState(() => _filterScale = 1.0),
-          child: AnimatedTransform(
-            transform:
-            Matrix4.diagonal3Values(_filterScale, _filterScale, 1.0),
-            duration: const Duration(milliseconds: 100),
-            alignment: Alignment.center,
-            child: Container(
-              height: 55,
-              width: 55,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1ADE7C),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                      color:
-                      const Color(0xFF1ADE7C).withValues(alpha: 0.3),
-                      blurRadius: 10)
-                ],
-              ),
-              child: const Icon(Icons.tune, color: Colors.white),
-            ),
-          ),
+        Container(
+          height: 55, width: 55,
+          decoration: BoxDecoration(color: const Color(0xFF1ADE7C), borderRadius: BorderRadius.circular(15)),
+          child: const Icon(Icons.tune, color: Colors.white),
         ),
       ],
     );
@@ -225,226 +181,109 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title,
-            style: const TextStyle(
-                fontSize: 19, fontWeight: FontWeight.w800)),
-        const Text("See All",
-            style: TextStyle(
-                color: Color(0xFF1ADE7C),
-                fontWeight: FontWeight.bold)),
+        Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+        const Text("See All", style: TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.w600)),
       ],
     );
   }
 
   Widget _buildFeaturedList() {
     return SizedBox(
-      height: 240,
+      height: 220,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: 3,
+        itemCount: 2,
         itemBuilder: (context, index) {
-          return Container(
-            width: 240,
-            margin: const EdgeInsets.only(right: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 15)
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: Stack(
-                    children: [
-                      Image.network(
-                          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500',
-                          height: 140,
-                          width: 240,
-                          fit: BoxFit.cover),
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                              color:
-                              Colors.white.withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(12)),
-                          child: const Text("\$250/mo",
-                              style: TextStyle(
-                                  color: Color(0xFF1ADE7C),
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Skyline Student Loft",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
-                      SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 14, color: Colors.grey),
-                          Text(" Near RUPP, Toul Kork",
-                              style: TextStyle(
-                                  color: Colors.grey, fontSize: 13)),
-                        ],
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          );
+          final item = {
+            "title": index == 0 ? "Skyline Student Loft" : "Modern Apartment",
+            "price": index == 0 ? "250" : "300",
+            "location": "Toul Kork, Phnom Penh",
+            "image": index == 0
+                ? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267"
+                : "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688",
+            "beds": "1 Bed", "baths": "1 Bath",
+            "description": "A beautiful place located near the university campus."
+          };
+          return _buildPropertyCard(item);
         },
       ),
     );
   }
 
-  Widget _buildRecentListings() {
-    final List<Map<String, String>> data = [
-      {
-        "title": "Cozy Studio near ITC",
-        "price": "\$150",
-        "img":
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400"
-      },
-      {
-        "title": "Student Shared Room",
-        "price": "\$120",
-        "img":
-        "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=400"
-      },
-    ];
+  Widget _buildPropertyCard(Map<String, dynamic> item) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(item: item))),
+      child: Container(
+        width: 220,
+        margin: const EdgeInsets.only(right: 15),
+        decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Image.network(item['image'] as String, height: 130, width: double.infinity, fit: BoxFit.cover),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 5),
+                  Text("\$${item['price']}/mo", style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildRecentListings() {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: data.length,
+      itemCount: 3,
       itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 10)
-            ],
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(data[index]['img']!,
-                    width: 90, height: 90, fit: BoxFit.cover),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
+        final item = {
+          "title": "Cozy Studio near ITC",
+          "price": "150",
+          "location": "Tuek La'ak, Phnom Penh",
+          "image": "https://images.unsplash.com/photo-1493809842364-78817add7ffb",
+          "beds": "1 Bed", "baths": "Shared Bath",
+          "description": "Perfect for students on a budget."
+        };
+        return GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(item: item))),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(item['image']!, width: 70, height: 70, fit: BoxFit.cover),
+                ),
+                const SizedBox(width: 15),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                              color: const Color(0xFF1ADE7C)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(5)),
-                          child: const Text("VERIFIED",
-                              style: TextStyle(
-                                  color: Color(0xFF1ADE7C),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                        Text(data[index]['price']!,
-                            style: const TextStyle(
-                                color: Color(0xFF1ADE7C),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      data[index]['title']!,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Text("Tuek La'ak, Phnom Penh",
-                        style:
-                        TextStyle(color: Colors.grey, fontSize: 12)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _infoIcon(Icons.bed, "1 Bed"),
-                        const SizedBox(width: 12),
-                        _infoIcon(Icons.wifi, "WiFi"),
-                      ],
-                    )
+                    Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 5),
+                    Text("\$${item['price']}", style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
                   ],
-                ),
-              ),
-            ],
+                )
+              ],
+            ),
           ),
         );
       },
-    );
-  }
-
-  Widget _infoIcon(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: Colors.grey[400]),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-      ],
-    );
-  }
-}
-
-class AnimatedTransform extends StatelessWidget {
-  final Widget child;
-  final Matrix4 transform;
-  final Duration duration;
-  final Alignment alignment;
-
-  const AnimatedTransform({
-    super.key,
-    required this.child,
-    required this.transform,
-    this.duration = const Duration(milliseconds: 200),
-    this.alignment = Alignment.center,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: duration,
-      transform: transform,
-      transformAlignment: alignment,
-      child: child,
     );
   }
 }

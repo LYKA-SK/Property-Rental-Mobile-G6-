@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final url = Uri.parse('https://propertyrentalapi.onrender.com/api/auth/login');
+      final url = Uri.parse('https://propertyrentalapi-simple.onrender.com/api/auth/login');
 
       final response = await http.post(
         url,

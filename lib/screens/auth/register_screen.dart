@@ -54,7 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final url = Uri.parse('https://propertyrentalapi.onrender.com/api/auth/register');
+      final url = Uri.parse('https://propertyrentalapi-simple.onrender.com/api/auth/register');
 
       final String name = _fullNameController.text.trim();
       final int roleValue = (_selectedRole == 'Agent') ? 1 : 0;
