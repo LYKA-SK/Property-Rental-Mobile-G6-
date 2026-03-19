@@ -2,19 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../details/detail_screen.dart';
 import '../profile/profile_screen.dart';
 
-// ================= MODEL =================
+// ================= PROPERTY MODEL =================
 class Property {
   final int id;
   final String title;
   final String description;
   final String address;
   final double price;
-  final String category;
-  final String owner;
+  final String? image;
 
   Property({
     required this.id,
@@ -22,24 +20,21 @@ class Property {
     required this.description,
     required this.address,
     required this.price,
-    required this.category,
-    required this.owner,
+    this.image,
   });
 
   factory Property.fromJson(Map<String, dynamic> json) {
     return Property(
       id: json['id'],
-      title: json['title'] ?? '',
+      title: json['title'] ?? 'No Title',
       description: json['description'] ?? '',
-      address: json['address'] ?? '',
+      address: json['address'] ?? 'No Address',
       price: (json['price'] ?? 0).toDouble(),
-      category: json['category']?['name'] ?? '',
-      owner: json['createdBy']?['fullname'] ?? '',
+      image: json['image'],
     );
   }
 }
 
-// ================= SCREEN =================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -48,15 +43,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedCategory = 0;
   String _userName = "User";
   int _userRole = 0;
   String? _remoteUrl;
-
   List<Property> properties = [];
   bool isLoading = true;
-
-  final List<String> _categories = ["Location", "Room For Rent", "Others"];
 
   @override
   void initState() {
@@ -65,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchProperties();
   }
 
-  // ================= USER =================
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -75,7 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // ================= API =================
   Future<void> fetchProperties() async {
     try {
       final response = await http.get(
@@ -84,63 +73,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-
-        final List items = jsonData['data']['items'];
-
+        final List items = jsonData['data']['items'] ?? [];
         setState(() {
-          properties =
-              items.map((item) => Property.fromJson(item)).toList();
+          properties = items.map((item) => Property.fromJson(item)).toList();
           isLoading = false;
         });
-      } else {
-        throw Exception("Failed to load properties");
       }
     } catch (e) {
-      print("ERROR: $e");
       setState(() => isLoading = false);
     }
   }
 
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF1ADE7C)))
             : RefreshIndicator(
-                onRefresh: fetchProperties,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildHeader(),
-                      const SizedBox(height: 25),
-                      _buildCategoryTabs(),
-                      const SizedBox(height: 20),
-                      _buildSearchBar(),
-                      const SizedBox(height: 25),
-                      _buildSectionHeader("Featured Rooms"),
-                      const SizedBox(height: 15),
-                      _buildFeaturedList(),
-                      const SizedBox(height: 25),
-                      _buildSectionHeader("Recent Listings"),
-                      const SizedBox(height: 15),
-                      _buildRecentListings(),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
-                ),
-              ),
+          onRefresh: fetchProperties,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                _buildHeader(),
+                const SizedBox(height: 25),
+                _buildSectionHeader("Featured Rooms"),
+                const SizedBox(height: 15),
+                _buildFeaturedList(),
+                const SizedBox(height: 25),
+                _buildSectionHeader("Recent Listings"),
+                const SizedBox(height: 15),
+                _buildRecentListings(),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  // ================= HEADER =================
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -148,165 +123,63 @@ class _HomeScreenState extends State<HomeScreen> {
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Current Location", style: TextStyle(color: Colors.grey)),
-            SizedBox(height: 4),
+            Text("Current Location", style: TextStyle(color: Colors.grey, fontSize: 12)),
             Row(
               children: [
-                Icon(Icons.location_on, color: Color(0xFF1ADE7C)),
-                SizedBox(width: 4),
-                Text("Phnom Penh, KH",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Icon(Icons.location_on, color: Color(0xFF1ADE7C), size: 18),
+                Text("Phnom Penh, KH", style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ],
         ),
         GestureDetector(
           onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProfileScreen(
-                  userRole: _userRole,
-                  userName: _userName,
-                ),
-              ),
-            );
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileScreen(userRole: _userRole, userName: _userName)));
             _loadUserData();
           },
           child: CircleAvatar(
-            radius: 24,
-            backgroundImage: (_remoteUrl != null && _remoteUrl!.isNotEmpty)
-                ? NetworkImage(_remoteUrl!)
-                : null,
-            child: (_remoteUrl == null || _remoteUrl!.isEmpty)
-                ? const Icon(Icons.person)
-                : null,
+            radius: 22,
+            backgroundImage: (_remoteUrl != null && _remoteUrl!.isNotEmpty) ? NetworkImage(_remoteUrl!) : null,
+            child: (_remoteUrl == null) ? const Icon(Icons.person) : null,
           ),
         )
       ],
     );
   }
 
-  // ================= CATEGORY =================
-  Widget _buildCategoryTabs() {
-    return SizedBox(
-      height: 45,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          bool isSelected = _selectedCategory == index;
-
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = index),
-            child: Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF1ADE7C) : Colors.white,
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Center(
-                child: Text(
-                  _categories[index],
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ================= SEARCH =================
-  Widget _buildSearchBar() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: "Search property...",
-        prefixIcon: const Icon(Icons.search),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  // ================= SECTION =================
-  Widget _buildSectionHeader(String title) {
-    return Text(title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
-  }
-
-  // ================= FEATURED =================
   Widget _buildFeaturedList() {
-    if (properties.isEmpty) {
-      return const Center(child: Text("No properties"));
-    }
-
     return SizedBox(
-      height: 220,
+      height: 250, // FIXED: Increased height to stop the 17px overflow
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: properties.length,
-        itemBuilder: (context, index) {
-          return _buildPropertyCard(properties[index]);
-        },
+        itemBuilder: (context, index) => _buildPropertyCard(properties[index]),
       ),
     );
   }
 
   Widget _buildPropertyCard(Property item) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DetailScreen(
-            item: {
-              "title": item.title,
-              "price": item.price.toString(),
-              "location": item.address,
-              "image": "https://picsum.photos/300",
-              "description": item.description,
-            },
-          ),
-        ),
-      ),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetailScreen(item: {'id': item.id}))),
       child: Container(
         width: 220,
         margin: const EdgeInsets.only(right: 15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              "https://picsum.photos/300",
-              height: 130,
-              width: double.infinity,
-              fit: BoxFit.cover,
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Image.network(item.image ?? "https://picsum.photos/300", height: 130, width: 220, fit: BoxFit.cover),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 5),
-                  Text("\$${item.price}",
-                      style: const TextStyle(color: Colors.green)),
-                  const SizedBox(height: 5),
-                  Text(item.address,
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text("\$${item.price}/mo", style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
+                  Text(item.address, style: const TextStyle(color: Colors.grey, fontSize: 11), maxLines: 1),
                 ],
               ),
             )
@@ -316,7 +189,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= RECENT =================
+  Widget _buildSectionHeader(String title) {
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+  }
+
   Widget _buildRecentListings() {
     return ListView.builder(
       shrinkWrap: true,
@@ -324,16 +200,11 @@ class _HomeScreenState extends State<HomeScreen> {
       itemCount: properties.length,
       itemBuilder: (context, index) {
         final item = properties[index];
-
         return ListTile(
-          leading: Image.network(
-            "https://picsum.photos/300",
-            width: 60,
-            fit: BoxFit.cover,
-          ),
-          title: Text(item.title),
-          subtitle: Text(item.address),
-          trailing: Text("\$${item.price}"),
+          contentPadding: EdgeInsets.zero,
+          leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(item.image ?? "https://picsum.photos/100", width: 50, height: 50, fit: BoxFit.cover)),
+          title: Text(item.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          trailing: Text("\$${item.price}", style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
         );
       },
     );
