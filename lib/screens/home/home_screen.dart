@@ -1,9 +1,45 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../details/detail_screen.dart';
 import '../profile/profile_screen.dart';
 
+// ================= MODEL =================
+class Property {
+  final int id;
+  final String title;
+  final String description;
+  final String address;
+  final double price;
+  final String category;
+  final String owner;
+
+  Property({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.address,
+    required this.price,
+    required this.category,
+    required this.owner,
+  });
+
+  factory Property.fromJson(Map<String, dynamic> json) {
+    return Property(
+      id: json['id'],
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      address: json['address'] ?? '',
+      price: (json['price'] ?? 0).toDouble(),
+      category: json['category']?['name'] ?? '',
+      owner: json['createdBy']?['fullname'] ?? '',
+    );
+  }
+}
+
+// ================= SCREEN =================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,106 +53,141 @@ class _HomeScreenState extends State<HomeScreen> {
   int _userRole = 0;
   String? _remoteUrl;
 
+  List<Property> properties = [];
+  bool isLoading = true;
+
   final List<String> _categories = ["Location", "Room For Rent", "Others"];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    fetchProperties();
   }
 
+  // ================= USER =================
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _userName = prefs.getString('user_name') ?? "User";
       _userRole = prefs.getInt('user_role') ?? 0;
-      // Fetch the remote URL saved during profile upload
       _remoteUrl = prefs.getString('profile_image_url');
     });
   }
 
+  // ================= API =================
+  Future<void> fetchProperties() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://propertyrentalapi-simple.onrender.com/api/public/properties'),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+
+        final List items = jsonData['data']['items'];
+
+        setState(() {
+          properties =
+              items.map((item) => Property.fromJson(item)).toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception("Failed to load properties");
+      }
+    } catch (e) {
+      print("ERROR: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              _buildHeader(),
-              const SizedBox(height: 25),
-              _buildCategoryTabs(),
-              const SizedBox(height: 20),
-              _buildSearchBar(),
-              const SizedBox(height: 25),
-              _buildSectionHeader("Featured Rooms"),
-              const SizedBox(height: 15),
-              _buildFeaturedList(),
-              const SizedBox(height: 25),
-              _buildSectionHeader("Recent Listings"),
-              const SizedBox(height: 15),
-              _buildRecentListings(),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: fetchProperties,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildHeader(),
+                      const SizedBox(height: 25),
+                      _buildCategoryTabs(),
+                      const SizedBox(height: 20),
+                      _buildSearchBar(),
+                      const SizedBox(height: 25),
+                      _buildSectionHeader("Featured Rooms"),
+                      const SizedBox(height: 15),
+                      _buildFeaturedList(),
+                      const SizedBox(height: 25),
+                      _buildSectionHeader("Recent Listings"),
+                      const SizedBox(height: 15),
+                      _buildRecentListings(),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
 
+  // ================= HEADER =================
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
+        const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Current Location", style: TextStyle(color: Colors.grey, fontSize: 13)),
-            const SizedBox(height: 4),
+            Text("Current Location", style: TextStyle(color: Colors.grey)),
+            SizedBox(height: 4),
             Row(
-              children: const [
-                Icon(Icons.location_on, color: Color(0xFF1ADE7C), size: 20),
+              children: [
+                Icon(Icons.location_on, color: Color(0xFF1ADE7C)),
                 SizedBox(width: 4),
-                Text("Phnom Penh, KH", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                Text("Phnom Penh, KH",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ],
         ),
         GestureDetector(
           onTap: () async {
-            // FIXED: Passing actual variables instead of null/empty strings
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProfileScreen(
+                builder: (_) => ProfileScreen(
                   userRole: _userRole,
                   userName: _userName,
                 ),
               ),
             );
-            _loadUserData(); // Refresh the image when returning from Profile
+            _loadUserData();
           },
           child: CircleAvatar(
             radius: 24,
-            backgroundColor: Colors.grey[200],
-            // FIXED: Using NetworkImage for remote URLs
             backgroundImage: (_remoteUrl != null && _remoteUrl!.isNotEmpty)
                 ? NetworkImage(_remoteUrl!)
                 : null,
             child: (_remoteUrl == null || _remoteUrl!.isEmpty)
-                ? const Icon(Icons.person, color: Colors.grey)
+                ? const Icon(Icons.person)
                 : null,
           ),
-        ),
+        )
       ],
     );
   }
 
-  // ... (Keep the rest of your UI building methods as they were)
-
+  // ================= CATEGORY =================
   Widget _buildCategoryTabs() {
     return SizedBox(
       height: 45,
@@ -125,6 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           bool isSelected = _selectedCategory == index;
+
           return GestureDetector(
             onTap: () => setState(() => _selectedCategory = index),
             child: Container(
@@ -133,11 +205,14 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: isSelected ? const Color(0xFF1ADE7C) : Colors.white,
                 borderRadius: BorderRadius.circular(25),
-                boxShadow: [if(!isSelected) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
               ),
               child: Center(
-                child: Text(_categories[index],
-                    style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontWeight: FontWeight.w600)),
+                child: Text(
+                  _categories[index],
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.grey,
+                  ),
+                ),
               ),
             ),
           );
@@ -146,95 +221,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ================= SEARCH =================
   Widget _buildSearchBar() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            height: 55,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)],
-            ),
-            child: const TextField(
-              decoration: InputDecoration(
-                  hintText: "Search property...",
-                  border: InputBorder.none,
-                  prefixIcon: Icon(Icons.search, color: Colors.grey)
-              ),
-            ),
-          ),
+    return TextField(
+      decoration: InputDecoration(
+        hintText: "Search property...",
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
         ),
-        const SizedBox(width: 12),
-        Container(
-          height: 55, width: 55,
-          decoration: BoxDecoration(color: const Color(0xFF1ADE7C), borderRadius: BorderRadius.circular(15)),
-          child: const Icon(Icons.tune, color: Colors.white),
-        ),
-      ],
+      ),
     );
   }
 
+  // ================= SECTION =================
   Widget _buildSectionHeader(String title) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-        const Text("See All", style: TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.w600)),
-      ],
-    );
+    return Text(title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
   }
 
+  // ================= FEATURED =================
   Widget _buildFeaturedList() {
+    if (properties.isEmpty) {
+      return const Center(child: Text("No properties"));
+    }
+
     return SizedBox(
       height: 220,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 2,
+        itemCount: properties.length,
         itemBuilder: (context, index) {
-          final item = {
-            "title": index == 0 ? "Skyline Student Loft" : "Modern Apartment",
-            "price": index == 0 ? "250" : "300",
-            "location": "Toul Kork, Phnom Penh",
-            "image": index == 0
-                ? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267"
-                : "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688",
-            "beds": "1 Bed", "baths": "1 Bath",
-            "description": "A beautiful place located near the university campus."
-          };
-          return _buildPropertyCard(item);
+          return _buildPropertyCard(properties[index]);
         },
       ),
     );
   }
 
-  Widget _buildPropertyCard(Map<String, dynamic> item) {
+  Widget _buildPropertyCard(Property item) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(item: item))),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailScreen(
+            item: {
+              "title": item.title,
+              "price": item.price.toString(),
+              "location": item.address,
+              "image": "https://picsum.photos/300",
+              "description": item.description,
+            },
+          ),
+        ),
+      ),
       child: Container(
         width: 220,
         margin: const EdgeInsets.only(right: 15),
         decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: Image.network(item['image'] as String, height: 130, width: double.infinity, fit: BoxFit.cover),
+            Image.network(
+              "https://picsum.photos/300",
+              height: 130,
+              width: double.infinity,
+              fit: BoxFit.cover,
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(item.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
-                  Text("\$${item['price']}/mo", style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
+                  Text("\$${item.price}",
+                      style: const TextStyle(color: Colors.green)),
+                  const SizedBox(height: 5),
+                  Text(item.address,
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
             )
@@ -244,44 +316,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ================= RECENT =================
   Widget _buildRecentListings() {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: 3,
+      itemCount: properties.length,
       itemBuilder: (context, index) {
-        final item = {
-          "title": "Cozy Studio near ITC",
-          "price": "150",
-          "location": "Tuek La'ak, Phnom Penh",
-          "image": "https://images.unsplash.com/photo-1493809842364-78817add7ffb",
-          "beds": "1 Bed", "baths": "Shared Bath",
-          "description": "Perfect for students on a budget."
-        };
-        return GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(item: item))),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 15),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(item['image']!, width: 70, height: 70, fit: BoxFit.cover),
-                ),
-                const SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    Text("\$${item['price']}", style: const TextStyle(color: Color(0xFF1ADE7C), fontWeight: FontWeight.bold)),
-                  ],
-                )
-              ],
-            ),
+        final item = properties[index];
+
+        return ListTile(
+          leading: Image.network(
+            "https://picsum.photos/300",
+            width: 60,
+            fit: BoxFit.cover,
           ),
+          title: Text(item.title),
+          subtitle: Text(item.address),
+          trailing: Text("\$${item.price}"),
         );
       },
     );
