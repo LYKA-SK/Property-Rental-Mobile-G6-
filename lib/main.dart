@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Import your screens
 import 'package:property_app/screens/auth/login_screen.dart';
 import 'package:property_app/screens/auth/register_screen.dart';
+import 'package:property_app/screens/home/home_screen.dart';
 import 'package:property_app/widgets/navbar.dart'; // ← this should contain MainNavigation
 
 void main() {
@@ -27,11 +28,12 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey.shade50,
       ),
       // Start with login screen
-      initialRoute: '/login',
+      // main.dart
+      initialRoute: '/home', // Change this to show Home first
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const MainNavigation(), // your bottom navigation
+        '/home': (context) => const MainNavigation(),
       },
     );
   }
