@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:property_app/screens/home/search_screen.dart';
-// 1. Import your new profile screen here
-import 'package:property_app/screens/home/profile_screen.dart';
-
+import '../screens/home/home_screen.dart';
+import '../screens/activity/favorite_screen.dart';
+import '../screens/activity/review_screen.dart';
+import '../screens/activity/booking_screen.dart';
+import 'package:property_app/screens/profile/profile_screen.dart' as profile_page;
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final int userRole;
+  final String userName;
+
+  const MainNavigation({
+    super.key,
+    this.userRole = 0,
+    this.userName = "Guest"
+  });
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -13,35 +21,47 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // 2. Update the list to include the actual ProfileScreen widget
-  final List<Widget> _pages = [
-    const Center(child: Text('Home Page')),      // Tab 0
-    const SearchScreen(),                         // Tab 1
-    const Center(child: Text('Saved Page')),     // Tab 2
-    const Center(child: Text('Bookings Page')),  // Tab 3
-    const ProfileScreen(),                        // Tab 4 (Connected!)
-  ];
+  void _onItemTapped(int index) {
+    if (widget.userName == "Guest" && index != 0) {
+      Navigator.pushNamed(context, '/login');
+    } else {
+      setState(() => _selectedIndex = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack( // Using IndexedStack preserves the state of your pages
-        index: _selectedIndex,
-        children: _pages,
+    final List<Widget> pages = [
+      const HomeScreen(),                          // Index 0
+      const ReviewScreen(),                        // Index 1: Swapped Search for Reviews
+      const MyFavoritesScreen(),                   // Index 2
+      const BookingScreen(),                       // Index 3: Connected to BookingScreen
+
+      profile_page.ProfileScreen( // Use the nickname here
+        userRole: widget.userRole,
+        userName: widget.userName,
       ),
+    ];
+
+    return Scaffold(
+      body: IndexedStack(index: _selectedIndex, children: pages),
+      // FIXED: Removed duplicate floatingActionButton code
+      floatingActionButton: widget.userRole == 1
+          ? FloatingActionButton(
+        backgroundColor: const Color(0xFF07B741),
+        onPressed: () { /* Agent Post Logic */ },
+        child: const Icon(Icons.add, color: Colors.white),
+      )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF2ECC71),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF07B741),
         unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'HOME'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'SEARCH'),
+          BottomNavigationBarItem(icon: Icon(Icons.star_outline), label: 'REVIEWS'), // Updated Icon/Label
           BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'SAVED'),
           BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'BOOKINGS'),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'PROFILE'),
